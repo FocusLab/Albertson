@@ -117,6 +117,33 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
+    def test_get_default_schema(self):
+        pool = self.get_pool()
+        conn = self.get_connection()
+
+        expected = conn.create_schema(**pool.schema).dict
+        result = pool.get_schema().dict
+
+        self.assertEquals(expected, result)
+        self.assertIsNotNone(result)
+
+    def test_get_init_schema(self):
+        schema_dict = {'hash_key_name': 'test', 'hash_key_proto_value': 'S'}
+        pool = self.get_pool(schema=schema_dict)
+        conn = self.get_connection()
+
+        expected = conn.create_schema(**schema_dict).dict
+        result = pool.get_schema().dict
+
+        self.assertEquals(expected, result)
+
+    def test_get_empty_schema(self):
+        pool = self.get_pool()
+        pool.schema = None
+
+        with self.assertRaises(NotImplementedError):
+            pool.get_schema()
+
     def test_does_missing_table_exist(self):
         pool = self.get_pool(table_name='nonexistent')
 
