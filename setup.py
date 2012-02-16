@@ -16,7 +16,7 @@ setup(
     packages=['albertson'],
     license="BSD",
     long_description=open('README.md').read(),
-    install_requires=[],
+    install_requires=['boto>=2.2.2'],
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Developers',
