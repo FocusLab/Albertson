@@ -6,7 +6,7 @@ A library for super easy to use, reliable, and scalable counters.
 
 ![](http://upload.wikimedia.org/wikipedia/en/7/79/The_Simpsons-Jeff_Albertson.png)
 
-*"Worst library ever" -- Comic Book Guy a.k.a. Jeff Albertson*
+*"Worst library ever!"*
 
 Why
 ---
