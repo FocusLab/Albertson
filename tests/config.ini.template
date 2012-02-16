@@ -1,3 +1,6 @@
 [aws]
 access_key=YOUR_AWS_ACCESS_KEY_ID
 secret_key=YOUR_AWS_SECRET_KEY
+[albertson]
+test_table_name=albertson_test
+delete_table=off

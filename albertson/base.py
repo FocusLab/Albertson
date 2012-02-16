@@ -1,9 +1,10 @@
 import boto
 
 
-class Counter(object):
+class CounterPool(object):
     '''
-    Base counter class that can be used directly or overwritten as needed.
+    Handles schema level interactions with DynamoDB and generates individual
+    counters as needed.
     '''
     table_name = None
 
@@ -11,7 +12,7 @@ class Counter(object):
         self.conn = self.get_conn(aws_access_key, aws_secret_key)
         self.table_name = table_name or self.table_name
 
-        super(Counter, self).__init__()
+        super(CounterPool, self).__init__()
 
     def get_conn(self, aws_access_key=None, aws_secret_key=None):
         return boto.connect_dynamodb(

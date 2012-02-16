@@ -4,17 +4,17 @@ import boto
 
 from testconfig import config
 
-from albertson.base import Counter
+from albertson.base import CounterPool
 
-from .dynamodb_utils import dynamo_cleanup
+from .dynamodb_utils import dynamo_cleanup, DynamoDeleteMixin
 
 
-class BaseCounterTests(unittest.TestCase):
+class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
     def __init__(self, *args, **kwargs):
         self.tables = {}
 
-        super(BaseCounterTests, self).__init__(*args, **kwargs)
+        super(BaseCounterPoolTests, self).__init__(*args, **kwargs)
 
     def get_connection(self):
         conn = getattr(self, '_conn', None)
@@ -75,8 +75,8 @@ class BaseCounterTests(unittest.TestCase):
 
         return table
 
-    def get_counter(self, counter_class=None, **kwargs):
-        counter_class = counter_class or Counter
+    def get_pool(self, pool_class=None, **kwargs):
+        pool_class = pool_class or CounterPool
         real_kwargs = {
             'aws_access_key': config['aws']['access_key'],
             'aws_secret_key': config['aws']['secret_key'],
@@ -85,46 +85,46 @@ class BaseCounterTests(unittest.TestCase):
         }
         real_kwargs.update(kwargs)
 
-        return counter_class(**real_kwargs)
+        return pool_class(**real_kwargs)
 
     def test_base_init(self):
-        counter = self.get_counter()
+        pool = self.get_pool()
 
-        counter.conn.list_tables()
+        pool.conn.list_tables()
 
     def test_get_init_table_name(self):
-        counter = self.get_counter()
+        pool = self.get_pool()
 
         expected = config['albertson']['test_table_name']
-        result = counter.get_table_name()
+        result = pool.get_table_name()
 
         self.assertEquals(expected, result)
 
     def test_get_empty_table_name(self):
-        counter = self.get_counter(table_name='')
+        pool = self.get_pool(table_name='')
 
         with self.assertRaises(NotImplementedError):
-            counter.get_table_name()
+            pool.get_table_name()
 
     def test_get_attr_table_name(self):
-        class TestCounter(Counter):
+        class TestCounterPool(CounterPool):
             table_name = 'some_name'
 
-        counter = self.get_counter(counter_class=TestCounter, table_name=None)
+        pool = self.get_pool(pool_class=TestCounterPool, table_name=None)
 
         expected = 'some_name'
-        result = counter.get_table_name()
+        result = pool.get_table_name()
 
         self.assertEquals(expected, result)
 
     def test_does_missing_table_exist(self):
-        counter = self.get_counter(table_name='nonexistent')
+        pool = self.get_pool(table_name='nonexistent')
 
-        self.assertFalse(counter.does_table_exist())
+        self.assertFalse(pool.does_table_exist())
 
     @dynamo_cleanup
     def test_does_existing_table_exist(self):
         self.get_table()
-        counter = self.get_counter()
+        pool = self.get_pool()
 
-        assert counter.does_table_exist()
+        assert pool.does_table_exist()
