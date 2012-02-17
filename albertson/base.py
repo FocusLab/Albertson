@@ -11,11 +11,16 @@ class CounterPool(object):
         'hash_key_name': 'counter_name',
         'hash_key_proto_value': 'S',
     }
+    read_units = 3
+    write_unites = 5
 
-    def __init__(self, aws_access_key=None, aws_secret_key=None, table_name=None, schema=None, auto_create_table=True):
+    def __init__(self, aws_access_key=None, aws_secret_key=None, table_name=None, schema=None, read_units=None, write_units=None, auto_create_table=True, ):
         self.conn = self.get_conn(aws_access_key, aws_secret_key)
         self.table_name = table_name or self.table_name
         self.schema = schema or self.schema
+        self.read_units = read_units or self.read_units
+        self.write_units = write_units or self.write_units
+        self.auto_create_table = auto_create_table
 
         super(CounterPool, self).__init__()
 
@@ -40,8 +45,27 @@ class CounterPool(object):
 
         return self.conn.create_schema(**self.schema)
 
-    def does_table_exist(self):
-        table_name = self.get_table_name()
-        existing_tables = self.conn.list_tables()
+    def get_read_units(self):
+        return self.read_units
 
-        return table_name in existing_tables
+    def get_write_units(self):
+        return self.write_units
+
+    def create_table(self):
+        return self.conn.create_table(
+            name=self.get_table_name(),
+            schema=self.get_schema(),
+            read_units=self.get_read_units(),
+            write_units=self.get_write_units(),
+        )
+
+    def get_table(self):
+        try:
+            table = self.conn.get_table(self.get_table_name)
+        except boto.exception.DynamoDBResponseError:
+            if self.auto_create_table:
+                table = self.create_table()
+            else:
+                raise
+
+        return table

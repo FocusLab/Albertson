@@ -144,14 +144,15 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             pool.get_schema()
 
-    def test_does_missing_table_exist(self):
+    def test_get_missing_table(self):
         pool = self.get_pool(table_name='nonexistent')
 
-        self.assertFalse(pool.does_table_exist())
+        with self.assertRaises(boto.exception.DynamoDBResponseError):
+            pool.get_table()
 
     @dynamo_cleanup
     def test_does_existing_table_exist(self):
         self.get_table()
         pool = self.get_pool()
 
-        assert pool.does_table_exist()
+        assert pool.get_table()
