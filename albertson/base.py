@@ -12,7 +12,7 @@ class CounterPool(object):
         'hash_key_proto_value': 'S',
     }
     read_units = 3
-    write_unites = 5
+    write_units = 5
 
     def __init__(self, aws_access_key=None, aws_secret_key=None, table_name=None, schema=None, read_units=None, write_units=None, auto_create_table=True, ):
         self.conn = self.get_conn(aws_access_key, aws_secret_key)
@@ -61,7 +61,7 @@ class CounterPool(object):
 
     def get_table(self):
         try:
-            table = self.conn.get_table(self.get_table_name)
+            table = self.conn.get_table(self.get_table_name())
         except boto.exception.DynamoDBResponseError:
             if self.auto_create_table:
                 table = self.create_table()

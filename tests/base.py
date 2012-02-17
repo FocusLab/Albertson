@@ -2,6 +2,8 @@ import unittest
 
 import boto
 
+from mock import MagicMock, sentinel
+
 from testconfig import config
 
 from albertson.base import CounterPool
@@ -144,15 +146,38 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         with self.assertRaises(NotImplementedError):
             pool.get_schema()
 
-    def test_get_missing_table(self):
+    def test_create_table(self):
+        pool = self.get_pool(table_name='albertson-create-test')
+
+        table = pool.create_table()
+
+        table.refresh(wait_for_active=True, retry_seconds=1)
+
+        self.assertEquals(table.status, 'ACTIVE')
+
+        table.delete()
+
+    @dynamo_cleanup
+    def test_get_existing_table(self):
+        self.get_table()
+        pool = self.get_pool()
+
+        assert pool.get_table()
+
+    def test_get_missing_table_without_auto_create(self):
         pool = self.get_pool(table_name='nonexistent')
 
         with self.assertRaises(boto.exception.DynamoDBResponseError):
             pool.get_table()
 
-    @dynamo_cleanup
-    def test_does_existing_table_exist(self):
-        self.get_table()
-        pool = self.get_pool()
+    def test_get_missing_table_with_auto_create(self):
+        pool = self.get_pool(auto_create_table=True, table_name='nonexistent')
+        pool.create_table = MagicMock(name='create_table')
 
-        assert pool.get_table()
+        expected = sentinel.table_return
+        pool.create_table.return_value = expected
+
+        result = pool.get_table()
+
+        pool.create_table.assert_called_with()
+        self.assertEquals(expected, result)
