@@ -93,6 +93,24 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         return pool_class(**real_kwargs)
 
+    def get_item(self, hash_key='test', attrs=None):
+        table = self.get_table()
+        real_attrs = {
+            'count': 5,
+            'created': '2012-01-02T23:32:13',
+            'modified': '2012-01-02T24:33:23',
+        }
+        if attrs:
+            real_attrs.update(attrs)
+
+        item = table.new_item(
+            hash_key=hash_key,
+            attrs=real_attrs,
+        )
+        item.put()
+
+        return item
+
     def test_base_init(self):
         pool = self.get_pool()
 
@@ -308,19 +326,9 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
     @dynamo_cleanup
     def test_counter_refresh(self):
-        table = self.get_table()
         pool = self.get_pool()
-        hash_key = 'test'
-        expected = table.new_item(
-            hash_key=hash_key,
-            attrs={
-                'count': 5,
-                'created': '2012-01-02T23:32:13',
-                'modified': '2012-01-02T24:33:23',
-            }
-        )
-        expected.put()
-        counter = pool.get_counter(hash_key)
+        expected = self.get_item()
+        counter = pool.get_counter(expected.hash_key)
 
         self.assertEqual(expected, counter.dynamo_item)
 
@@ -332,6 +340,23 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(expected, counter.dynamo_item)
 
+    @dynamo_cleanup
+    def test_counter_increment(self):
+        table = self.get_table()
+        pool = self.get_pool()
+        item = self.get_item()
+        counter = pool.get_counter(item.hash_key)
+        print item
+        print counter.dynamo_item
 
+        self.assertEqual(item, counter.dynamo_item)
+        old_count = counter.count
 
+        counter.increment()
 
+        expected_count = old_count + 1
+        self.assertEqual(expected_count, counter.count)
+
+        fetched_item = table.get_item(item.hash_key)
+        self.assertEqual(expected_count, fetched_item['count'])
+        self.assertEqual(fetched_item, counter.dynamo_item)

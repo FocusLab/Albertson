@@ -193,6 +193,7 @@ class Counter(object):
 
     @property
     def count(self):
+        print self.dynamo_item
         return self.dynamo_item['count']
 
     @property
@@ -205,3 +206,12 @@ class Counter(object):
 
     def refresh(self):
         self.dynamo_item = self.pool.get_item(hash_key=self.name)
+
+    def increment(self, amount=1):
+        item = self.dynamo_item
+        item.add_attribute('count', amount)
+        result = item.save(return_values='UPDATED_NEW')
+        print result
+        item.update(result['Attributes'])
+
+        return self.count
