@@ -245,6 +245,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(expected, result)
 
+    @dynamo_cleanup
     def test_table_caching(self):
         pool = self.get_pool()
         pool._table = sentinel.cached_table
@@ -254,6 +255,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(expected, result)
 
+    @dynamo_cleanup
     def test_get_counter(self):
         pool = self.get_pool()
         name = 'test'
@@ -262,6 +264,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(pool, result.pool)
 
+    @dynamo_cleanup
     def test_counter_name(self):
 
         pool = self.get_pool()
@@ -271,6 +274,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
+    @dynamo_cleanup
     def test_counter_count(self):
         pool = self.get_pool()
         name = 'test'
@@ -280,6 +284,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
+    @dynamo_cleanup
     def test_counter_created_on(self):
         pool = self.get_pool()
         name = 'test'
@@ -290,6 +295,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
+    @dynamo_cleanup
     def test_counter_modified_on(self):
         pool = self.get_pool()
         name = 'test'
@@ -299,3 +305,33 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         result = counter.modified_on.isoformat()
 
         self.assertEquals(expected, result)
+
+    @dynamo_cleanup
+    def test_counter_refresh(self):
+        table = self.get_table()
+        pool = self.get_pool()
+        hash_key = 'test'
+        expected = table.new_item(
+            hash_key=hash_key,
+            attrs={
+                'count': 5,
+                'created': '2012-01-02T23:32:13',
+                'modified': '2012-01-02T24:33:23',
+            }
+        )
+        expected.put()
+        counter = pool.get_counter(hash_key)
+
+        self.assertEqual(expected, counter.dynamo_item)
+
+        expected.add_attribute('count', 3)
+        ret_val = expected.save(return_values='UPDATED_NEW')
+        expected.update(ret_val['Attributes'])
+
+        counter.refresh()
+
+        self.assertEqual(expected, counter.dynamo_item)
+
+
+
+

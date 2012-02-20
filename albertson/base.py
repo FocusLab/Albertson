@@ -203,4 +203,5 @@ class Counter(object):
     def modified_on(self):
         return datetime.strptime(self.dynamo_item['modified_on'], ISO_FORMAT)
 
-
+    def refresh(self):
+        self.dynamo_item = self.pool.get_item(hash_key=self.name)
