@@ -1,6 +1,8 @@
+from datetime import datetime
 import unittest
 
 import boto
+from boto.dynamodb.exceptions import DynamoDBKeyNotFoundError
 
 from mock import MagicMock, sentinel
 
@@ -9,6 +11,8 @@ from testconfig import config
 from albertson.base import CounterPool
 
 from .dynamodb_utils import dynamo_cleanup, DynamoDeleteMixin
+
+ISO_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
 
 class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
@@ -181,3 +185,52 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         pool.create_table.assert_called_with()
         self.assertEquals(expected, result)
+
+    @dynamo_cleanup
+    def test_create_item(self):
+        hash_key = 'test'
+        table = self.get_table()
+        pool = self.get_pool(auto_create_table=True)
+        now = datetime.utcnow().replace(microsecond=0)
+
+        expected = {
+            'counter_name': hash_key,
+            'count': 0,
+        }
+        result = pool.create_item(hash_key=hash_key)
+
+        self.assertDictContainsSubset(expected, result)
+
+        created_offset = datetime.strptime(result['created_on'], ISO_FORMAT) - now
+        modified_offset = datetime.strptime(result['modified_on'], ISO_FORMAT) - now
+
+        self.assertLess(created_offset.seconds, 2)
+        self.assertGreaterEqual(created_offset.seconds, 0)
+        self.assertLess(modified_offset.seconds, 2)
+        self.assertGreaterEqual(modified_offset.seconds, 0)
+
+        with self.assertRaises(DynamoDBKeyNotFoundError):
+            table.get_item(hash_key=hash_key, consistent_read=True)
+
+    @dynamo_cleanup
+    def test_get_missing_item(self):
+        hash_key = 'test'
+        pool = self.get_pool(auto_create_table=True)
+        pool.create_item = MagicMock(name='create_item')
+
+        expected = sentinel.item_return
+        pool.create_item.return_value = expected
+
+        result = pool.get_item(hash_key)
+
+        pool.create_item.assert_called_with(hash_key=hash_key, start=0)
+        self.assertEquals(expected, result)
+
+    def test_table_caching(self):
+        pool = self.get_pool()
+        pool._table = sentinel.cached_table
+
+        expected = sentinel.cached_table
+        result = pool.get_table()
+
+        self.assertEqual(expected, result)

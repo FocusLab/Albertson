@@ -1,4 +1,7 @@
+from datetime import datetime
+
 import boto
+from boto.dynamodb.exceptions import DynamoDBKeyNotFoundError
 
 
 class CounterPool(object):
@@ -111,12 +114,66 @@ class CounterPool(object):
         Hook point for overriding how the CounterPool transforms table_name
         into a boto DynamoDB Table object.
         '''
-        try:
-            table = self.conn.get_table(self.get_table_name())
-        except boto.exception.DynamoDBResponseError:
-            if self.auto_create_table:
-                table = self.create_table()
-            else:
-                raise
+        if hasattr(self, '_table'):
+            table = self._table
+        else:
+            try:
+                table = self.conn.get_table(self.get_table_name())
+            except boto.exception.DynamoDBResponseError:
+                if self.auto_create_table:
+                    table = self.create_table()
+                else:
+                    raise
+
+            self._table = table
 
         return table
+
+    def create_item(self, hash_key, start=0):
+        '''
+        Hook point for overriding how the CouterPool creates a DynamoDB item
+        for a given counter when an existing item can't be found.
+        '''
+        table = self.get_table()
+        now = datetime.utcnow().replace(microsecond=0).isoformat()
+
+        item = table.new_item(
+            hash_key=hash_key,
+            attrs={
+                'created_on': now,
+                'modified_on': now,
+                'count': start,
+            }
+        )
+
+        return item
+
+    def get_item(self, hash_key, start=0):
+        '''
+        Hook point for overriding how the CouterPool fetches a DynamoDB item
+        for a given counter.
+        '''
+        table = self.get_table()
+
+        try:
+            item = table.get_item(hash_key=hash_key)
+        except DynamoDBKeyNotFoundError:
+            item = None
+
+        if item is None:
+            item = self.create_item(hash_key=hash_key, start=start)
+
+        return item
+
+
+    def get_counter(self, name):
+        '''
+        Gets the DynamoDB item behind a counter and ties it to a Counter
+        instace.
+        '''
+
+
+class Counter(object):
+    '''
+    Interface to individual counters.
+    '''
