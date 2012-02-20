@@ -352,11 +352,15 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         self.assertEqual(item, counter.dynamo_item)
         old_count = counter.count
 
+        now = datetime.utcnow().replace(microsecond=0)
         counter.increment()
 
         expected_count = old_count + 1
         self.assertEqual(expected_count, counter.count)
 
         fetched_item = table.get_item(item.hash_key)
+        modified_offset = datetime.strptime(fetched_item['modified_on'], ISO_FORMAT) - now
         self.assertEqual(expected_count, fetched_item['count'])
         self.assertEqual(fetched_item, counter.dynamo_item)
+        self.assertLess(modified_offset.seconds, 2)
+        self.assertGreaterEqual(modified_offset.seconds, 0)

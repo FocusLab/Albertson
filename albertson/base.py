@@ -210,8 +210,11 @@ class Counter(object):
     def increment(self, amount=1):
         item = self.dynamo_item
         item.add_attribute('count', amount)
+        item.put_attribute(
+            'modified_on',
+            datetime.utcnow().replace(microsecond=0).isoformat()
+        )
         result = item.save(return_values='UPDATED_NEW')
-        print result
         item.update(result['Attributes'])
 
         return self.count
