@@ -226,6 +226,25 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         pool.create_item.assert_called_with(hash_key=hash_key, start=0)
         self.assertEquals(expected, result)
 
+    @dynamo_cleanup
+    def test_get_existing_item(self):
+        hash_key = 'test'
+        table = self.get_table()
+        expected = table.new_item(
+            hash_key=hash_key,
+            attrs={
+                'count': 5,
+                'created': '2012-01-02T23:32:13',
+                'modified': '2012-01-02T24:33:23',
+            }
+        )
+        expected.put()
+        pool = self.get_pool()
+
+        result = pool.get_item(hash_key)
+
+        self.assertEqual(expected, result)
+
     def test_table_caching(self):
         pool = self.get_pool()
         pool._table = sentinel.cached_table
