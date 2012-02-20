@@ -253,3 +253,49 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         result = pool.get_table()
 
         self.assertEqual(expected, result)
+
+    def test_get_counter(self):
+        pool = self.get_pool()
+        name = 'test'
+
+        result = pool.get_counter(name)
+
+        self.assertEqual(pool, result.pool)
+
+    def test_counter_name(self):
+
+        pool = self.get_pool()
+        expected = 'test'
+
+        result = pool.get_counter(expected).name
+
+        self.assertEquals(expected, result)
+
+    def test_counter_count(self):
+        pool = self.get_pool()
+        name = 'test'
+
+        expected = 0
+        result = pool.get_counter(name).count
+
+        self.assertEquals(expected, result)
+
+    def test_counter_created_on(self):
+        pool = self.get_pool()
+        name = 'test'
+        counter = pool.get_counter(name)
+
+        expected = counter.dynamo_item['created_on']
+        result = counter.created_on.isoformat()
+
+        self.assertEquals(expected, result)
+
+    def test_counter_modified_on(self):
+        pool = self.get_pool()
+        name = 'test'
+        counter = pool.get_counter(name)
+
+        expected = counter.dynamo_item['modified_on']
+        result = counter.modified_on.isoformat()
+
+        self.assertEquals(expected, result)

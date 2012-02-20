@@ -3,6 +3,8 @@ from datetime import datetime
 import boto
 from boto.dynamodb.exceptions import DynamoDBKeyNotFoundError
 
+ISO_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
 
 class CounterPool(object):
     '''
@@ -165,15 +167,40 @@ class CounterPool(object):
 
         return item
 
-
-    def get_counter(self, name):
+    def get_counter(self, name, start=0):
         '''
         Gets the DynamoDB item behind a counter and ties it to a Counter
         instace.
         '''
+        item = self.get_item(hash_key=name, start=start)
+        counter = Counter(dynamo_item=item, pool=self)
+
+        return counter
 
 
 class Counter(object):
     '''
     Interface to individual counters.
     '''
+
+    def __init__(self, dynamo_item, pool):
+        self.dynamo_item = dynamo_item
+        self.pool = pool
+
+    @property
+    def name(self):
+        return self.dynamo_item['counter_name']
+
+    @property
+    def count(self):
+        return self.dynamo_item['count']
+
+    @property
+    def created_on(self):
+        return datetime.strptime(self.dynamo_item['created_on'], ISO_FORMAT)
+
+    @property
+    def modified_on(self):
+        return datetime.strptime(self.dynamo_item['modified_on'], ISO_FORMAT)
+
+
