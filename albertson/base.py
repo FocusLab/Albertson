@@ -131,26 +131,30 @@ class CounterPool(object):
 
         return table
 
-    def create_item(self, hash_key, start=0):
+    def create_item(self, hash_key, start=0, extra_attrs=None):
         '''
         Hook point for overriding how the CouterPool creates a DynamoDB item
         for a given counter when an existing item can't be found.
         '''
         table = self.get_table()
         now = datetime.utcnow().replace(microsecond=0).isoformat()
+        attrs = {
+            'created_on': now,
+            'modified_on': now,
+            'count': start,
+        }
+
+        if extra_attrs:
+            attrs.update(extra_attrs)
 
         item = table.new_item(
             hash_key=hash_key,
-            attrs={
-                'created_on': now,
-                'modified_on': now,
-                'count': start,
-            }
+            attrs=attrs,
         )
 
         return item
 
-    def get_item(self, hash_key, start=0):
+    def get_item(self, hash_key, start=0, extra_attrs=None):
         '''
         Hook point for overriding how the CouterPool fetches a DynamoDB item
         for a given counter.
@@ -163,7 +167,11 @@ class CounterPool(object):
             item = None
 
         if item is None:
-            item = self.create_item(hash_key=hash_key, start=start)
+            item = self.create_item(
+                hash_key=hash_key,
+                start=start,
+                extra_attrs=extra_attrs,
+            )
 
         return item
 

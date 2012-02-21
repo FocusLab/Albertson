@@ -231,6 +231,33 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
             table.get_item(hash_key=hash_key, consistent_read=True)
 
     @dynamo_cleanup
+    def test_create_item_with_extra_attrs(self):
+        hash_key = 'test'
+        table = self.get_table()
+        pool = self.get_pool(auto_create_table=True)
+        now = datetime.utcnow().replace(microsecond=0)
+
+        expected = {
+            'counter_name': hash_key,
+            'count': 0,
+            'foo': 'bar',
+        }
+        result = pool.create_item(hash_key=hash_key, extra_attrs={'foo': 'bar'})
+
+        self.assertDictContainsSubset(expected, result)
+
+        created_offset = datetime.strptime(result['created_on'], ISO_FORMAT) - now
+        modified_offset = datetime.strptime(result['modified_on'], ISO_FORMAT) - now
+
+        self.assertLess(created_offset.seconds, 2)
+        self.assertGreaterEqual(created_offset.seconds, 0)
+        self.assertLess(modified_offset.seconds, 2)
+        self.assertGreaterEqual(modified_offset.seconds, 0)
+
+        with self.assertRaises(DynamoDBKeyNotFoundError):
+            table.get_item(hash_key=hash_key, consistent_read=True)
+
+    @dynamo_cleanup
     def test_get_missing_item(self):
         hash_key = 'test'
         pool = self.get_pool(auto_create_table=True)
@@ -241,7 +268,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         result = pool.get_item(hash_key)
 
-        pool.create_item.assert_called_with(hash_key=hash_key, start=0)
+        pool.create_item.assert_called_with(hash_key=hash_key, start=0, extra_attrs=None)
         self.assertEquals(expected, result)
 
     @dynamo_cleanup
