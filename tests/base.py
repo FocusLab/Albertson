@@ -9,8 +9,7 @@ from mock import MagicMock, sentinel
 from testconfig import config
 
 from albertson import CounterPool
-
-from .dynamodb_utils import dynamo_cleanup, DynamoDeleteMixin
+from albertson.dynamodb_utils.testing import dynamo_cleanup, DynamoDeleteMixin
 
 ISO_FORMAT = '%Y-%m-%dT%H:%M:%S'
 
