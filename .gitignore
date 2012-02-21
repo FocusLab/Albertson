@@ -2,3 +2,5 @@ Albertson.egg-info
 .coverage
 tests/config.ini
 cover
+build
+dist

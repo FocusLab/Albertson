@@ -12,7 +12,7 @@ setup(
     description="Easy to use, scalable, counters powered by Amazon's DynamoDB",
     author="Sean O'Connor",
     author_email="sean@focuslab.io",
-    url="https://github.com/FocusLab/Albetson",
+    url="https://github.com/FocusLab/Albertson",
     packages=['albertson'],
     license="BSD",
     long_description=open('README.md').read(),

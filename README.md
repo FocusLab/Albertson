@@ -3,6 +3,8 @@ Albertson
 
 A library for super easy to use, reliable, and scalable counters.
 
+Homepage: [https://github.com/FocusLab/Albertson][3]
+
 **Albertson is in an alpha state and probably shouldn't be used in
 production by anybody just yet.**
 
@@ -38,3 +40,4 @@ pedant, Comic Book Guy a.k.a. Jeff Albertson.
 
 [1]:    https://www.focuslab.io
 [2]:    http://aws.amazon.com/dynamodb/
+[3]:    https://github.com/FocusLab/Albertson
