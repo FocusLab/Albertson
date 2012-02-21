@@ -8,7 +8,7 @@ from mock import MagicMock, sentinel
 
 from testconfig import config
 
-from albertson.base import CounterPool
+from albertson import CounterPool
 
 from .dynamodb_utils import dynamo_cleanup, DynamoDeleteMixin
 

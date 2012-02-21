@@ -1,1 +1,3 @@
-VERSION = (0, 1, 2)
+from .base import Counter, CounterPool
+
+VERSION = (0, 1, 3)
