@@ -178,7 +178,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         table.delete()
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_get_existing_table(self):
         self.get_table()
         pool = self.get_pool()
@@ -203,7 +203,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         pool.create_table.assert_called_with()
         self.assertEquals(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_create_item(self):
         hash_key = 'test'
         table = self.get_table()
@@ -229,7 +229,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         with self.assertRaises(DynamoDBKeyNotFoundError):
             table.get_item(hash_key=hash_key, consistent_read=True)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_create_item_with_extra_attrs(self):
         hash_key = 'test'
         table = self.get_table()
@@ -256,7 +256,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         with self.assertRaises(DynamoDBKeyNotFoundError):
             table.get_item(hash_key=hash_key, consistent_read=True)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_get_missing_item(self):
         hash_key = 'test'
         pool = self.get_pool(auto_create_table=True)
@@ -270,7 +270,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         pool.create_item.assert_called_with(hash_key=hash_key, start=0, extra_attrs=None)
         self.assertEquals(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_get_existing_item(self):
         hash_key = 'test'
         table = self.get_table()
@@ -289,7 +289,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_table_caching(self):
         pool = self.get_pool()
         pool._table = sentinel.cached_table
@@ -299,7 +299,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_get_counter(self):
         pool = self.get_pool()
         name = 'test'
@@ -308,7 +308,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(pool, result.pool)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_counter_name(self):
 
         pool = self.get_pool()
@@ -318,7 +318,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_counter_count(self):
         pool = self.get_pool()
         name = 'test'
@@ -328,7 +328,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_counter_created_on(self):
         pool = self.get_pool()
         name = 'test'
@@ -339,7 +339,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_counter_modified_on(self):
         pool = self.get_pool()
         name = 'test'
@@ -350,7 +350,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEquals(expected, result)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_counter_refresh(self):
         pool = self.get_pool()
         expected = self.get_item()
@@ -366,7 +366,7 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
 
         self.assertEqual(expected, counter.dynamo_item)
 
-    @dynamo_cleanup
+    @dynamo_cleanup()
     def test_counter_increment(self):
         table = self.get_table()
         pool = self.get_pool()
@@ -382,6 +382,31 @@ class BaseCounterPoolTests(DynamoDeleteMixin, unittest.TestCase):
         counter.increment()
 
         expected_count = old_count + 1
+        self.assertEqual(expected_count, counter.count)
+
+        fetched_item = table.get_item(item.hash_key)
+        modified_offset = datetime.strptime(fetched_item['modified_on'], ISO_FORMAT) - now
+        self.assertEqual(expected_count, fetched_item['count'])
+        self.assertEqual(fetched_item, counter.dynamo_item)
+        self.assertLess(modified_offset.seconds, 2)
+        self.assertGreaterEqual(modified_offset.seconds, 0)
+
+    @dynamo_cleanup()
+    def test_counter_decrement(self):
+        table = self.get_table()
+        pool = self.get_pool()
+        item = self.get_item()
+        counter = pool.get_counter(item.hash_key, start=1)
+        print item
+        print counter.dynamo_item
+
+        self.assertEqual(item, counter.dynamo_item)
+        old_count = counter.count
+
+        now = datetime.utcnow().replace(microsecond=0)
+        counter.decrement()
+
+        expected_count = old_count - 1
         self.assertEqual(expected_count, counter.count)
 
         fetched_item = table.get_item(item.hash_key)

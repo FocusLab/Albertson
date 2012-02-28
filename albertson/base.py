@@ -231,3 +231,6 @@ class Counter(object):
         item.update(result['Attributes'])
 
         return self.count
+
+    def decrement(self, amount=1):
+        return self.increment(amount * -1)
