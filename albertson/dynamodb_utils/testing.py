@@ -44,18 +44,21 @@ def dynamo_cleanup_func(extra_tables=None):
                 item.delete()
 
 
-def dynamo_cleanup(func, extra_tables=None):
+def dynamo_cleanup(extra_tables=None):
 
-    def new(*args, **kwargs):
-        try:
-            func(*args, **kwargs)
-        except Exception:
+    def decorator(func):
+
+        def new(*args, **kwargs):
+            try:
+                func(*args, **kwargs)
+            except Exception:
+                dynamo_cleanup_func(extra_tables)
+                raise
+
             dynamo_cleanup_func(extra_tables)
-            raise
 
-        dynamo_cleanup_func(extra_tables)
+        new = make_decorator(func)(new)
 
-    new = make_decorator(func)(new)
+        return new
 
-    return new
-
+    return decorator
