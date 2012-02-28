@@ -13,7 +13,7 @@ setup(
     author="Sean O'Connor",
     author_email="sean@focuslab.io",
     url="https://github.com/FocusLab/Albertson",
-    packages=['albertson'],
+    packages=['albertson', 'albertson.dynamodb_utils'],
     license="BSD",
     long_description=open('README.md').read(),
     install_requires=['boto>=2.2.2'],
